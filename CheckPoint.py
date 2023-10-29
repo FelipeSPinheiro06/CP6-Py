@@ -1,5 +1,14 @@
 import oracledb as orcl
 
+# @Autor: def - Rafael Chaves - RM99643
+# @Descrição: Limpa todos os caracteres deixando apenas os numéros
+def toCleanCpf(cpf):
+    # Remove qualquer caractere não numérico do CPF
+    cpfClean = ''.join(filter(str.isdigit, cpf))
+    return cpfClean
+
+
+
 def alterar_registro(cursor):
     resp = 1
     while(resp != 0):
@@ -18,7 +27,7 @@ def alterar_registro(cursor):
             id_professor = int(input("Digite o id do professor que deseja alterar: "))
 
             #Preparando o código que pega os dados
-            query = f"""SELECT * FROM PROFESSORES WHERE id = {id_professor}"""
+            query = f"""SELECT * FROM TB_PROFESSORES WHERE id = {id_professor}"""
 
             #Executando o código
             cursor.execute(query)
@@ -46,7 +55,7 @@ def alterar_registro(cursor):
                     print("Erro de transação com o banco")
                 else:
                     #Preparando o comando
-                    alteracao = f"""UPDATE PROFESSORES SET PROFESSOR_NOME = '{nome_professor}', PROFESSOR_CPF = {cpf_professor}, 
+                    alteracao = f"""UPDATE TB_PROFESSORES SET PROFESSOR_NOME = '{nome_professor}', PROFESSOR_CPF = {cpf_professor}, 
                                 PROFESSOR_IDADE = {idade_professor}, PROFESSOR_TITULACAOMAX = '{titualacao_max}'"""
                     #Executando o comando
                     cursor.execute(alteracao)
@@ -62,7 +71,7 @@ def alterar_registro(cursor):
             id_endereco = int(input("Digite o id do endereço que deseja alterar: "))
 
             #Preparando o código que pega os dados
-            query = f"""SELECT * FROM ENDERECOS WHERE ENDERECO_ID = {id_endereco}"""
+            query = f"""SELECT * FROM TB_ENDERECOS WHERE ENDERECO_ID = {id_endereco}"""
 
             #Executando o código
             cursor.execute(query)
@@ -91,7 +100,7 @@ def alterar_registro(cursor):
                     print("Erro de transação com o banco")
                 else:
                     #Preparando o comando
-                    alteracao = f"""UPDATE ENDERECOS SET ENDERECO_LOGRADOURO = '{logradouro}', ENDERECO_BAIRRO = '{bairro}', 
+                    alteracao = f"""UPDATE TB_ENDERECOS SET ENDERECO_LOGRADOURO = '{logradouro}', ENDERECO_BAIRRO = '{bairro}', 
                                 ENDERECO_CIDADE = '{cidade}', ENDERECO_ESTADO = '{estado}, ENDERECO_CEP = '{cep}'"""
                     #Executando o comando
                     cursor.execute(alteracao)
@@ -100,10 +109,150 @@ def alterar_registro(cursor):
 
             resp = int(input("Deseja continuar (1-SIM/0-NÃO): "))
 
+
+
+
+# @Autor: def - Rafael Chaves - RM99643
+# @Descrição: Método que deleta os dados no banco de dados Oracle 
+def deleteRecord(script):
+    while True:
+        try:
+            # Escolha(1-4) para decidir como que quer deletar os dados
+            print("1 - Deseja deletar os dados referente ao Professor especifico?")
+            print("2 - Deseja deletar os dados referente ao endereço do Professor?")
+            print("3 - Deseja deletar todos os dados referente a uma conta de um professor?")
+            print("4 - Deseja sair?")
+            option = int(input("Digite a opção que deseja(1-4): "))
+
+            # Solicitando CPF do Professor para que seja feita o delete com o filtro certo
+            IcpfProfessor = input("Digite o CPF referente ao Professor que deseja deletar os dados: ")
+
+            # Limpar o CPF removendo a pontuação e mantendo apenas os números
+            cpf_professor = toCleanCpf(IcpfProfessor)
+
+            # Verificar se o CPF possui 11 dígitos após a limpeza
+            if len(cpf_professor) == 11:
+                # Opção 1 - Deleta os dados do Professor escolhido
+                if(option == 1):
+                    # Verificar se o CPF possui 11 dígitos após a limpeza
+                    if len(cpf_professor) == 11:
+                        # Preparar o comando SQL de exclusão
+                        scriptDelete = f"DELETE FROM TB_PROFESSORES WHERE PROFESSOR_CPF = {cpf_professor};"
+                        
+                        # Executar o comando de exclusão
+                        script.execute(scriptDelete)
+
+                        # Confirmar a transação
+                        script.connection.commit()
+
+                        # Print para confirmar a exclusão
+                        print(f"Registro da tabela 'TB_PROFESSORES' excluído com sucesso.")
+                    else:
+                        # Se o cpf entrar errado
+                        print(f"Cpf '{cpf_professor}' inválido!")
+
+                # Opção 2 - Deleta os dados do Endereço escolhido
+                elif (option == 2):
+                    try:
+                        # Preparar o comando SQL para consultar os endereços do professor com base no CPF
+                        scriptSelect = f"""
+                            SELECT P.PROFESSOR_CPF, E.ENDERECO_LOGRADOURO, E.ENDERECO_BAIRRO, E.ENDERECO_CIDADE, E.ENDERECO_ESTADO, E.ENDERECO_CEP FROM TB_PROFESSORES P
+                            JOIN TB_ENDERECOS E 
+                                ON P.PROFESSOR_ID = E.PROFESSOR_ID
+                                WHERE P.PROFESSOR_CPF = '{cpf_professor}';
+                        """
+                        
+                        # Executar o comando de seleção
+                        script.execute(scriptSelect)
+                        
+                        # Pegar todos os endereços relacionados a esse CPF
+                        enderecosProfessor = script.fetchall()
+                        
+                        if len(enderecosProfessor) != 0:
+                            # Listar os endereços e permitir que o usuário escolha qual endereço excluir
+                            print(f"Endereços relacionados a este CPF '{cpf_professor}': ")
+                            for i, endereco in enumerate(enderecosProfessor):
+                                print(f"{i + 1} - {endereco}")  # listar o(s) endereço(s) completo(s)
+
+                            escolhaEndereco = int(input("Digite o número do endereço que deseja excluir: ")) - 1
+
+                            if 0 <= escolhaEndereco < len(enderecosProfessor):
+                                # Obter o ID do endereço selecionado
+                                endereco_id = enderecosProfessor [escolhaEndereco] [0]
+
+                                # Preparar o comando SQL de exclusão do endereço com base no ID
+                                scriptDeleteEndereco = f"DELETE FROM ENDERECOS WHERE ENDERECO_ID = {endereco_id};"
+
+                                # Executar o comando de exclusão
+                                script.execute(scriptDeleteEndereco)
+
+                                # Confirmar a transação
+                                script.connection.commit()
+
+                                print(f"Endereço excluído com sucesso.")
+                            else:
+                                print("Escolha de endereço inválida.")
+                        else:
+                            print(f"Nenhum endereço encontrado para o CPF: '{cpf_professor}'.")
+                    except Exception as e:
+                        print(f"Erro ao excluir registros: {e}")
+
+                # Opção 3 - Deleta todos os dados do Professor e endereço escolhido
+                elif (option == 3):
+                    try:
+                        # Preparar o comando SQL para consultar o Id do professor com base no CPF
+                        scriptSearchId = f""" 
+                            SELECT P.PROFESSOR_ID FROM TB_PROFESSORES P
+                            JOIN TB_ENDERECOS E 
+                                ON P.PROFESSOR_ID = E.PROFESSOR_ID
+                                WHERE P.PROFESSOR_CPF = '{cpf_professor}';
+                        """
+
+                        # Executar o comando de exclusão
+                        script.execute(scriptSearchId)
+      
+                        # Pegar o ID do professor
+                        professor_id = script.fetchone()
+
+                        if professor_id:
+                            # Faz um Transactional para deletar todos os dados referente ao CPF selecionado
+                            scriptDeleteAll = f"""
+                                BEGIN
+                                    EXECUTE IMMEDIATE 'ALTER TABLE TB_ENDERECOS DISABLE CONSTRAINT FK_tbProfessor';
+                                    
+                                    DELETE FROM TB_PROFESSORES
+                                        WHERE PROFESSOR_ID = {scriptSearchId[0]};
+                                    DELETE FROM TB_ENDERECOS
+                                        WHERE PROFESSOR_ID = {scriptSearchId[0]};
+                                        
+                                    EXECUTE IMMEDIATE 'ALTER TABLE TB_ENDERECOS ENABLE CONSTRAINT FK_tbProfessor';
+                                    COMMIT;
+                                END;
+                                /
+                            """
+
+                            script.execute(scriptDeleteAll)
+                            print(f"Todos os dados referentes ao CPF {cpf_professor} foram excluídos com sucesso.")
+                        else:
+                            print(f"Não foi encontrado nenhum dado referente ao cpf: {cpf_professor}")
+                    except Exception as e:
+                        print(f"Erro ao excluir registros: {e}")
+              
+            else:
+                # Se o cpf entrar errado
+                print(f"Cpf '{cpf_professor}' inválido!")
+
+            if (option == 4):
+                print("Saindo...")
+                break 
         
+        except Exception as e:
+            print(f"Erro ao excluir registros: {e}")
+
+
+       
 
 def conecta_BD():
-
     try:
         #conectar com o Servidor
         str_conect = orcl.makedsn("oracle.fiap.com.br", "1521", "ORCL")
@@ -112,7 +261,6 @@ def conecta_BD():
 
         #Criar as instrucoes para cada modulo
         inst_SQL = conect.cursor()
-
     except Exception as e:
         print("Erro: ", e)
         conexao = False
