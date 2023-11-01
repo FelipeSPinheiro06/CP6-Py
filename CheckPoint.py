@@ -1,4 +1,6 @@
 import oracledb as orcl
+import brazilcep
+
 
 # @Autor: def - Rafael Chaves - RM99643
 # @Descrição: Limpa todos os caracteres deixando apenas os numéros
@@ -9,6 +11,8 @@ def toCleanCpf(cpf):
 
 
 
+# @Autor: def - Felipe Santos Pinheiro - RM550244
+# @Descrição: Método que altera os dados das duas tabelas do banco de dados
 def alterar_registro(cursor):
     resp = 1
     while(resp != 0):
@@ -89,11 +93,17 @@ def alterar_registro(cursor):
             else:
                 try:
                     #Pegando os novos valores
-                    logradouro = input("Nome: ")
-                    bairro = input("Bairro: ")
-                    cidade = input("Cidade: ")
-                    estado = input("Estado: ")
                     cep = input("CEP: ")
+                    try:
+                        address = brazilcep.get_address_from_cep(cep)
+                    except:
+                        print("Erro de consulta com o cep")
+                    else:
+                        logradouro = address['street']
+                        bairro = address['district']
+                        cidade = address['city']
+                        estado = address['state']
+
                 except ValueError:
                     print("Digite valores numéricos")
                 except:
@@ -265,8 +275,10 @@ def conecta_BD():
         print("Erro: ", e)
         conexao = False
         inst_SQL = ""
-        conn = ""
     else:
         conexao = True
 
-    return(conexao,inst_SQL,conn)
+    return(conexao,inst_SQL)
+
+
+
