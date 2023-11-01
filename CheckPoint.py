@@ -1,6 +1,32 @@
 import oracledb as orcl
 import brazilcep
 
+def main():
+    conexao, inst_SQL, conn = conecta_BD()
+
+    while (conexao):
+        print("1-Insercao")
+        print("2-Consulta")
+        print("3-Atualizacao")
+        print("4-Exclusao")
+        print("5-Sair")
+
+        opc = int(input("Digite a opcao (1-5): "))
+
+        if opc == 1:
+            insere_professor()  # Opção de inserção
+
+        elif opc == 2:
+            alterar_registro(inst_SQL)  # Opção de consulta e atualização
+
+        elif opc == 3:
+            alterar_registro(inst_SQL)  # Opção de atualização
+
+        elif opc == 4:
+            deleteRecord(inst_SQL)  # Opção de exclusão
+
+        elif opc == 5:
+            conexao = False
 
 # @Autor: def - Rafael Chaves - RM99643
 # @Descrição: Limpa todos os caracteres deixando apenas os numéros
@@ -345,6 +371,9 @@ def conecta_BD():
         conexao = True
 
     return(conexao,inst_SQL)
+
+if (__name__ == "__main__"):
+    main()
 
 
 
