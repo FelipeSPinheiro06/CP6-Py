@@ -9,6 +9,72 @@ def toCleanCpf(cpf):
     cpfClean = ''.join(filter(str.isdigit, cpf))
     return cpfClean
 
+# @Autor: def_insere - Gabriel Girami - RM98017
+# @Descrição: Def insere_professor
+def insere_professor():
+    resp = 1
+    while(resp != 0):
+        print("0 - Sair")
+        print("1 - Inserir informações do Professor")
+        print("2 - Inserir o endereço do professor")
+        opcao = int(input("Digite a sua opção (0-2): "))
+
+        if(opcao == 0):
+            resp = 0
+        
+        if(opcao == 1):
+            lista_dados_professor = []
+    
+            try:
+                cod = int(input("Digite o código do professor: "))
+                nome = input("Digite o nome do professor: ")
+                cpf = int(input("Digite o cpf do professor: "))
+                idade = int(input("Digite a idade do professor: "))
+                formacao = input("Digite a titulação do professor: ")
+            except ValueError:
+                print("Digite apenas valores numéricos")
+            else:
+                professor = {'Código' : cod, 'Nome' : nome, 'CPF' : cpf, 'Idade' : idade,
+                            'CEP' : cep, 'Endereço' : endereco, 'Formação' : formacao}
+                
+            finally:
+                print("Operação finalizada")
+
+        else:        
+            
+            if(opcao ==2):
+                lista_dados_endereco = []
+
+            try:
+                    #Pegando os novos valores
+                    cep = input("CEP: ")
+                    try:
+                        address = brazilcep.get_address_from_cep(cep)
+                    except:
+                        print("Erro de consulta com o cep")
+                    else:
+                        logradouro = address['street']
+                        bairro = address['district']
+                        cidade = address['city']
+                        estado = address['state']
+
+            except ValueError:
+                    print("Digite valores numéricos")
+            except:
+                    print("Erro de transação com o banco")
+            else:
+                    #Preparando o comando
+                    alteracao = f"""ADD TB_ENDERECOS SET ENDERECO_LOGRADOURO = '{logradouro}', ENDERECO_BAIRRO = '{bairro}', 
+                                ENDERECO_CIDADE = '{cidade}', ENDERECO_ESTADO = '{estado}, ENDERECO_CEP = '{cep}'"""
+                    #Executando o comando
+                    cursor.execute(inserir)
+            finally:
+                    print("Professor alterado com sucesso!")
+
+            resp = int(input("Deseja continuar (1-SIM/0-NÃO): "))
+
+
+
 
 
 # @Autor: def - Felipe Santos Pinheiro - RM550244
