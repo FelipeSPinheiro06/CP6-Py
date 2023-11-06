@@ -8,7 +8,8 @@ def main():
 
     while (conexao):
         print("1-Inserção")
-        print("2-Consulta")
+        print("2-Consulta Específica")
+        print("3-Consulta Geral")
         print("3-Atualização")
         print("4-Exclusão")
         print("5-Sair")
@@ -19,15 +20,24 @@ def main():
             insere_professor(inst_SQL)  # Opção de inserção
 
         elif opc == 2:
-            alterar_registro(inst_SQL)  # Opção de consulta e atualização
+            opc = int(input("Você deseja listar os registros de qual tabela (1-PROFESSOR/0-ENDEREÇO): "))
+
+            if opc == 0:
+                recuperar_todos_os_registros(inst_SQL, "tb_endereco")
+
+            elif opc == 1:
+                recuperar_todos_os_registros(inst_SQL, "tb_professor")
 
         elif opc == 3:
-            alterar_registro(inst_SQL)  # Opção de atualização
+            gerar_relatorio_completo(inst_SQL)
 
         elif opc == 4:
-            deleteRecord(inst_SQL)  # Opção de exclusão
+            alterar_registro(inst_SQL)  # Opção de atualização
 
         elif opc == 5:
+            deleteRecord(inst_SQL)  # Opção de exclusão
+
+        elif opc == 6:
             conexao = False
 
 # @Autor: def - Rafael Chaves - RM99643
@@ -99,16 +109,6 @@ def insere_professor(cursor):
                       print("Erro de transação com o banco")
               else:
                       #Preparando o comando
-                      
-                      #Comando antigo
-                      '''
-                        f"""ADD TB_ENDERECOS 
-                        SET ENDERECO_LOGRADOURO = '{logradouro}', ENDERECO_BAIRRO = '{bairro}', 
-                        ENDERECO_CIDADE = '{cidade}', ENDERECO_ESTADO 
-                        = '{estado}, ENDERECO_CEP = '{cep}'"""
-                      '''
-                    
-                      #Comando novo
                       inserir = f"""INSERT INTO TB_ENDERECO (ENDERECO_ID, ENDERECO_LOGRADOURO, 
                                     ENDERECO_BAIRRO, ENDERECO_CIDADE, 
                                     ENDERECO_ESTADO, ENDERECO_CEP, PROFESSOR_ID)
@@ -124,7 +124,43 @@ def insere_professor(cursor):
               resp = int(input("Deseja continuar (1-SIM/0-NÃO): "))
 
 
+# @Autor: def - Felipe Bernardes - RM98886
+# @Descrição: Método que lista todos os registros inseridos
+def recuperar_todos_os_registros(cursor, nome_tabela):
+    try:
+        query = f"SELECT * FROM {nome_tabela}"
+        cursor.execute(query)
+        registros = cursor.fetchall()
+        return registros
+    except Exception as e:
+        print(f"Erro ao buscar registros de {nome_tabela}: {e}")
+        return []
 
+def gerar_relatorio_completo(cursor):
+    nomes_tabelas = ["TB_PROFESSORES", "TB_ENDERECOS"]
+
+    for nome_tabela in nomes_tabelas:
+        print(f"Registros na tabela '{nome_tabela}':")
+        registros = recuperar_todos_os_registros(cursor, nome_tabela)
+
+        if registros:
+            for registro in registros:
+                print(registro)
+            print(f"Total de registros em '{nome_tabela}': {len(registros)}")
+        else:
+            print(f"Nenhum registro encontrado na tabela '{nome_tabela}'")
+        print("---------------------------------------------------")
+
+
+        conexao, inst_SQL, conn = conecta_BD()
+
+        if conexao:
+            gerar_relatorio_completo(inst_SQL)
+
+            inst_SQL.close()
+            conn.close()
+        else:
+            print("Não foi possível estabelecer uma conexão com o banco de dados.")
 
 
 # @Autor: def - Felipe Santos Pinheiro - RM550244
@@ -384,8 +420,9 @@ def deleteRecord(script):
             print(f"Erro ao excluir registros: {e}")
 
 
-       
-
+    
+# @Autor: def - Victor Fanfoni - RM99173
+# @Descrição: Método que conecta para o banco de dados
 def conecta_BD():
     try:
         #conectar com o Servidor
@@ -406,6 +443,3 @@ def conecta_BD():
 
 if (__name__ == "__main__"):
     main()
-
-
-
