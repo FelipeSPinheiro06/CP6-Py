@@ -1,20 +1,22 @@
 import oracledb as orcl
 import brazilcep
 
+# @Autor: def_main - Gustavo Vinhola - RM98826
+# @Descrição: Função Principal do Programa
 def main():
-    conexao, inst_SQL, conn = conecta_BD()
+    conexao, inst_SQL = conecta_BD()
 
     while (conexao):
-        print("1-Insercao")
+        print("1-Inserção")
         print("2-Consulta")
-        print("3-Atualizacao")
-        print("4-Exclusao")
+        print("3-Atualização")
+        print("4-Exclusão")
         print("5-Sair")
 
         opc = int(input("Digite a opcao (1-5): "))
 
         if opc == 1:
-            insere_professor()  # Opção de inserção
+            insere_professor(inst_SQL)  # Opção de inserção
 
         elif opc == 2:
             alterar_registro(inst_SQL)  # Opção de consulta e atualização
@@ -37,7 +39,7 @@ def toCleanCpf(cpf):
 
 # @Autor: def_insere - Gabriel Girami - RM98017
 # @Descrição: Def insere_professor
-def insere_professor():
+def insere_professor(cursor):
     resp = 1
     while(resp != 0):
         print("0 - Sair")
@@ -49,19 +51,26 @@ def insere_professor():
             resp = 0
         
         if(opcao == 1):
-            lista_dados_professor = []
-    
             try:
                 cod = int(input("Digite o código do professor: "))
                 nome = input("Digite o nome do professor: ")
                 cpf = int(input("Digite o cpf do professor: "))
                 idade = int(input("Digite a idade do professor: "))
+                cep = int(input("Digite o cpf do professor: "))
                 formacao = input("Digite a titulação do professor: ")
+                endereco = int(input("Digite o cpf do professor: "))
             except ValueError:
                 print("Digite apenas valores numéricos")
             else:
-                professor = {'Código' : cod, 'Nome' : nome, 'CPF' : cpf, 'Idade' : idade,
-                            'CEP' : cep, 'Endereço' : endereco, 'Formação' : formacao}
+                
+                #Fazendo a query
+                inserir = f"""INSERT INTO TB_PROFESSOR (PROFESSOR_ID, PROFESSOR_NOME, 
+                              PROFESSOR_CPF, PROFESSOR_IDADE, PROFESSOR_TITULACAO_MAX, ENDERECO_ID)
+                              VALUES ({cod}, '{nome}', {cpf}, {idade}, {cep}, '{formacao}', {endereco});"""
+
+
+                #Executando o comando
+                cursor.execute(inserir)
                 
             finally:
                 print("Operação finalizada")
@@ -69,35 +78,50 @@ def insere_professor():
         else:        
             
             if(opcao ==2):
-                lista_dados_endereco = []
-
-            try:
-                    #Pegando os novos valores
-                    cep = input("CEP: ")
-                    try:
-                        address = brazilcep.get_address_from_cep(cep)
-                    except:
-                        print("Erro de consulta com o cep")
-                    else:
-                        logradouro = address['street']
-                        bairro = address['district']
-                        cidade = address['city']
-                        estado = address['state']
-
-            except ValueError:
-                    print("Digite valores numéricos")
-            except:
-                    print("Erro de transação com o banco")
-            else:
-                    #Preparando o comando
-                    alteracao = f"""ADD TB_ENDERECOS SET ENDERECO_LOGRADOURO = '{logradouro}', ENDERECO_BAIRRO = '{bairro}', 
-                                ENDERECO_CIDADE = '{cidade}', ENDERECO_ESTADO = '{estado}, ENDERECO_CEP = '{cep}'"""
-                    #Executando o comando
-                    cursor.execute(inserir)
-            finally:
-                    print("Professor alterado com sucesso!")
-
-            resp = int(input("Deseja continuar (1-SIM/0-NÃO): "))
+              try:
+                      #Pegando os novos valores
+                      cod_endereco = int(input("Digite o código do endereço: "))
+                      cod_professor = int(input("Digite o código do professor: "))
+                      cep = input("CEP: ")
+                      try:
+                          address = brazilcep.get_address_from_cep(cep)
+                      except:
+                          print("Erro de consulta com o cep")
+                      else:
+                          logradouro = address['street']
+                          bairro = address['district']
+                          cidade = address['city']
+                          estado = address['state']
+  
+              except ValueError:
+                      print("Digite valores numéricos")
+              except:
+                      print("Erro de transação com o banco")
+              else:
+                      #Preparando o comando
+                      
+                      #Comando antigo
+                      '''
+                        f"""ADD TB_ENDERECOS 
+                        SET ENDERECO_LOGRADOURO = '{logradouro}', ENDERECO_BAIRRO = '{bairro}', 
+                        ENDERECO_CIDADE = '{cidade}', ENDERECO_ESTADO 
+                        = '{estado}, ENDERECO_CEP = '{cep}'"""
+                      '''
+                    
+                      #Comando novo
+                      inserir = f"""INSERT INTO TB_ENDERECO (ENDERECO_ID, ENDERECO_LOGRADOURO, 
+                                    ENDERECO_BAIRRO, ENDERECO_CIDADE, 
+                                    ENDERECO_ESTADO, ENDERECO_CEP, PROFESSOR_ID)
+                                    VALUES ({cod_endereco}, '{logradouro}', '{bairro}', 
+                                    '{cidade}', '{estado}', {cep}, {cod_professor});"""
+  
+                
+                      #Executando o comando
+                      cursor.execute(inserir)
+              finally:
+                      print("Professor alterado com sucesso!")
+  
+              resp = int(input("Deseja continuar (1-SIM/0-NÃO): "))
 
 
 
@@ -151,8 +175,10 @@ def alterar_registro(cursor):
                     print("Erro de transação com o banco")
                 else:
                     #Preparando o comando
-                    alteracao = f"""UPDATE TB_PROFESSORES SET PROFESSOR_NOME = '{nome_professor}', PROFESSOR_CPF = {cpf_professor}, 
-                                PROFESSOR_IDADE = {idade_professor}, PROFESSOR_TITULACAOMAX = '{titualacao_max}'"""
+                    alteracao = f"""UPDATE TB_PROFESSORES SET PROFESSOR_NOME = '{nome_professor}', 
+                                    PROFESSOR_CPF = {cpf_professor}, 
+                                    PROFESSOR_IDADE = {idade_professor}, PROFESSOR_TITULACAOMAX =
+                                    '{titualacao_max}'"""
                     #Executando o comando
                     cursor.execute(alteracao)
                 finally:
@@ -184,6 +210,7 @@ def alterar_registro(cursor):
 
             else:
                 try:
+                    
                     #Pegando os novos valores
                     cep = input("CEP: ")
                     try:
@@ -202,8 +229,10 @@ def alterar_registro(cursor):
                     print("Erro de transação com o banco")
                 else:
                     #Preparando o comando
-                    alteracao = f"""UPDATE TB_ENDERECOS SET ENDERECO_LOGRADOURO = '{logradouro}', ENDERECO_BAIRRO = '{bairro}', 
-                                ENDERECO_CIDADE = '{cidade}', ENDERECO_ESTADO = '{estado}, ENDERECO_CEP = '{cep}'"""
+                    alteracao = f"""UPDATE TB_ENDERECOS SET ENDERECO_LOGRADOURO ='{logradouro}', 
+                                    ENDERECO_BAIRRO = '{bairro}', 
+                                    ENDERECO_CIDADE = '{cidade}', 
+                                    ENDERECO_ESTADO = '{estado}, ENDERECO_CEP = '{cep}'"""
                     #Executando o comando
                     cursor.execute(alteracao)
                 finally:
@@ -258,7 +287,8 @@ def deleteRecord(script):
                     try:
                         # Preparar o comando SQL para consultar os endereços do professor com base no CPF
                         scriptSelect = f"""
-                            SELECT P.PROFESSOR_CPF, E.ENDERECO_LOGRADOURO, E.ENDERECO_BAIRRO, E.ENDERECO_CIDADE, E.ENDERECO_ESTADO, E.ENDERECO_CEP FROM TB_PROFESSORES P
+                            SELECT P.PROFESSOR_CPF, E.ENDERECO_LOGRADOURO, E.ENDERECO_BAIRRO, 
+                            E.ENDERECO_CIDADE, E.ENDERECO_ESTADO, E.ENDERECO_CEP FROM TB_PROFESSORES P
                             JOIN TB_ENDERECOS E 
                                 ON P.PROFESSOR_ID = E.PROFESSOR_ID
                                 WHERE P.PROFESSOR_CPF = '{cpf_professor}';
@@ -320,14 +350,16 @@ def deleteRecord(script):
                             # Faz um Transactional para deletar todos os dados referente ao CPF selecionado
                             scriptDeleteAll = f"""
                                 BEGIN
-                                    EXECUTE IMMEDIATE 'ALTER TABLE TB_ENDERECOS DISABLE CONSTRAINT FK_tbProfessor';
+                                    EXECUTE IMMEDIATE 'ALTER TABLE TB_ENDERECOS DISABLE 
+                                    CONSTRAINT FK_tbProfessor';
                                     
                                     DELETE FROM TB_PROFESSORES
                                         WHERE PROFESSOR_ID = {scriptSearchId[0]};
                                     DELETE FROM TB_ENDERECOS
                                         WHERE PROFESSOR_ID = {scriptSearchId[0]};
                                         
-                                    EXECUTE IMMEDIATE 'ALTER TABLE TB_ENDERECOS ENABLE CONSTRAINT FK_tbProfessor';
+                                    EXECUTE IMMEDIATE 'ALTER TABLE TB_ENDERECOS ENABLE 
+                                    CONSTRAINT FK_tbProfessor';
                                     COMMIT;
                                 END;
                                 /
