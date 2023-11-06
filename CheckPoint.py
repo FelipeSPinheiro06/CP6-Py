@@ -10,11 +10,11 @@ def main():
         print("1-Inserção")
         print("2-Consulta Específica")
         print("3-Consulta Geral")
-        print("3-Atualização")
-        print("4-Exclusão")
-        print("5-Sair")
+        print("4-Atualização")
+        print("5-Exclusão")
+        print("6-Sair")
 
-        opc = int(input("Digite a opcao (1-5): "))
+        opc = int(input("Digite a opção (1-5): "))
 
         if opc == 1:
             insere_professor(inst_SQL)  # Opção de inserção
@@ -48,7 +48,7 @@ def toCleanCpf(cpf):
     return cpfClean
 
 # @Autor: def_insere - Gabriel Girami - RM98017
-# @Descrição: Def insere_professor
+# @Descrição: Inserir registro nas tabelas
 def insere_professor(cursor):
     resp = 1
     while(resp != 0):
@@ -62,21 +62,18 @@ def insere_professor(cursor):
         
         if(opcao == 1):
             try:
-                cod = int(input("Digite o código do professor: "))
                 nome = input("Digite o nome do professor: ")
-                cpf = int(input("Digite o cpf do professor: "))
+                cpf = input("Digite o cpf do professor: ")
                 idade = int(input("Digite a idade do professor: "))
-                cep = int(input("Digite o cpf do professor: "))
                 formacao = input("Digite a titulação do professor: ")
-                endereco = int(input("Digite o cpf do professor: "))
             except ValueError:
                 print("Digite apenas valores numéricos")
             else:
                 
                 #Fazendo a query
-                inserir = f"""INSERT INTO TB_PROFESSOR (PROFESSOR_ID, PROFESSOR_NOME, 
-                              PROFESSOR_CPF, PROFESSOR_IDADE, PROFESSOR_TITULACAO_MAX, ENDERECO_ID)
-                              VALUES ({cod}, '{nome}', {cpf}, {idade}, {cep}, '{formacao}', {endereco});"""
+                inserir = f"""INSERT INTO TB_PROFESSOR (PROFESSOR_NOME, 
+                              PROFESSOR_CPF, PROFESSOR_IDADE, PROFESSOR_TITULACAO_MAX)
+                              VALUES ('{nome}', '{cpf}', {idade}, '{formacao}')"""
 
 
                 #Executando o comando
@@ -113,7 +110,7 @@ def insere_professor(cursor):
                                     ENDERECO_BAIRRO, ENDERECO_CIDADE, 
                                     ENDERECO_ESTADO, ENDERECO_CEP, PROFESSOR_ID)
                                     VALUES ({cod_endereco}, '{logradouro}', '{bairro}', 
-                                    '{cidade}', '{estado}', {cep}, {cod_professor});"""
+                                    '{cidade}', '{estado}', {cep}, {cod_professor})"""
   
                 
                       #Executando o comando
