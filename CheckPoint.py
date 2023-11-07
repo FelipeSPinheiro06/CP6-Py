@@ -4,7 +4,7 @@ import brazilcep
 # @Autor: def_main - Gustavo Vinhola - RM98826
 # @Descrição: Função Principal do Programa
 def main():
-    conexao, inst_SQL = conecta_BD()
+    conexao, inst_SQL, conect = conecta_BD()
 
     while (conexao):
         print("1-Inserção")
@@ -17,25 +17,25 @@ def main():
         opc = int(input("Digite a opção (1-5): "))
 
         if opc == 1:
-            insere_professor(inst_SQL)  # Opção de inserção
+            insere_professor(inst_SQL, conect)  # Opção de inserção
 
         elif opc == 2:
             opc = int(input("Você deseja listar os registros de qual tabela (1-PROFESSOR/0-ENDEREÇO): "))
 
             if opc == 0:
-                recuperar_todos_os_registros(inst_SQL, "tb_endereco")
+                recuperar_todos_os_registros(inst_SQL, "tb_endereco", conect)
 
             elif opc == 1:
-                recuperar_todos_os_registros(inst_SQL, "tb_professor")
+                recuperar_todos_os_registros(inst_SQL, "tb_professor", conect)
 
         elif opc == 3:
-            gerar_relatorio_completo(inst_SQL)
+            gerar_relatorio_completo(inst_SQL, conect)
 
         elif opc == 4:
-            alterar_registro(inst_SQL)  # Opção de atualização
+            alterar_registro(inst_SQL, conect)  # Opção de atualização
 
         elif opc == 5:
-            deleteRecord(inst_SQL)  # Opção de exclusão
+            deleteRecord(inst_SQL, conect)  # Opção de exclusão
 
         elif opc == 6:
             conexao = False
@@ -49,7 +49,7 @@ def toCleanCpf(cpf):
 
 # @Autor: def_insere - Gabriel Girami - RM98017
 # @Descrição: Inserir registro nas tabelas
-def insere_professor(cursor):
+def insere_professor(cursor, conect):
     resp = 1
     while(resp != 0):
         print("0 - Sair")
@@ -66,9 +66,6 @@ def insere_professor(cursor):
                 cpf = input("Digite o cpf do professor: ")
                 idade = int(input("Digite a idade do professor: "))
                 formacao = input("Digite a titulação do professor: ")
-            except ValueError:
-                print("Digite apenas valores numéricos")
-            else:
                 
                 #Fazendo a query
                 inserir = f"""INSERT INTO TB_PROFESSOR (PROFESSOR_NOME, 
@@ -78,62 +75,71 @@ def insere_professor(cursor):
 
                 #Executando o comando
                 cursor.execute(inserir)
+            except ValueError:
+                print("Digite apenas valores numéricos")
+            except:
+                print("Erro de transação do banco")
+            else:
+                conect.commit()
                 
             finally:
                 print("Operação finalizada")
 
         else:        
             
-            if(opcao ==2):
+            if(opcao == 2):
               try:
-                      #Pegando os novos valores
-                      cod_endereco = int(input("Digite o código do endereço: "))
-                      cod_professor = int(input("Digite o código do professor: "))
-                      cep = input("CEP: ")
-                      try:
-                          address = brazilcep.get_address_from_cep(cep)
-                      except:
-                          print("Erro de consulta com o cep")
-                      else:
-                          logradouro = address['street']
-                          bairro = address['district']
-                          cidade = address['city']
-                          estado = address['state']
+                #Pegando os novos valores
+                cod_endereco = int(input("Digite o código do endereço: "))
+                cod_professor = int(input("Digite o código do professor: "))
+                cep = input("CEP: ")
+                try:
+                    address = brazilcep.get_address_from_cep(cep)
+                except:
+                    print("Erro de consulta com o cep")
+                else:
+                    logradouro = address['street']
+                    bairro = address['district']
+                    cidade = address['city']
+                    estado = address['state']
+
+                #Preparando o comando
+                inserir = f"""INSERT INTO TB_ENDERECO (ENDERECO_ID, ENDERECO_LOGRADOURO, 
+                            ENDERECO_BAIRRO, ENDERECO_CIDADE, 
+                            ENDERECO_ESTADO, ENDERECO_CEP, PROFESSOR_ID)
+                            VALUES ({cod_endereco}, '{logradouro}', '{bairro}', 
+                            '{cidade}', '{estado}', {cep}, {cod_professor})"""
+
+        
+                #Executando o comando
+                cursor.execute(inserir)
   
               except ValueError:
-                      print("Digite valores numéricos")
+                    print("Digite valores numéricos")
               except:
-                      print("Erro de transação com o banco")
+                    print("Erro de transação com o banco")
               else:
-                      #Preparando o comando
-                      inserir = f"""INSERT INTO TB_ENDERECO (ENDERECO_ID, ENDERECO_LOGRADOURO, 
-                                    ENDERECO_BAIRRO, ENDERECO_CIDADE, 
-                                    ENDERECO_ESTADO, ENDERECO_CEP, PROFESSOR_ID)
-                                    VALUES ({cod_endereco}, '{logradouro}', '{bairro}', 
-                                    '{cidade}', '{estado}', {cep}, {cod_professor})"""
-  
-                
-                      #Executando o comando
-                      cursor.execute(inserir)
+                    conect.commit()
               finally:
-                      print("Professor alterado com sucesso!")
+                    print("Professor alterado com sucesso!")
   
               resp = int(input("Deseja continuar (1-SIM/0-NÃO): "))
 
 
 # @Autor: def - Felipe Bernardes - RM98886
 # @Descrição: Método que lista todos os registros inseridos
-def recuperar_todos_os_registros(cursor, nome_tabela):
+def recuperar_todos_os_registros(cursor, nome_tabela, conect):
     try:
         query = f"SELECT * FROM {nome_tabela}"
         cursor.execute(query)
+        conect.commit()
         registros = cursor.fetchall()
         return registros
     except Exception as e:
         print(f"Erro ao buscar registros de {nome_tabela}: {e}")
         return []
 
-def gerar_relatorio_completo(cursor):
+def gerar_relatorio_completo(cursor, conect):
     nomes_tabelas = ["TB_PROFESSORES", "TB_ENDERECOS"]
 
     for nome_tabela in nomes_tabelas:
@@ -149,20 +155,20 @@ def gerar_relatorio_completo(cursor):
         print("---------------------------------------------------")
 
 
-        conexao, inst_SQL, conn = conecta_BD()
+        conexao, inst_SQL, conect= conecta_BD()
 
         if conexao:
             gerar_relatorio_completo(inst_SQL)
 
             inst_SQL.close()
-            conn.close()
+            conect.close()
         else:
             print("Não foi possível estabelecer uma conexão com o banco de dados.")
 
 
 # @Autor: def - Felipe Santos Pinheiro - RM550244
 # @Descrição: Método que altera os dados das duas tabelas do banco de dados
-def alterar_registro(cursor):
+def alterar_registro(cursor, conect):
     resp = 1
     while(resp != 0):
         print("0 - Sair")
@@ -202,11 +208,7 @@ def alterar_registro(cursor):
                     cpf_professor = int(input("CPF: "))
                     idade_professor = int(input("Idade: "))
                     titualacao_max = input("Titulação: ")
-                except ValueError:
-                    print("Digite valores numéricos")
-                except:
-                    print("Erro de transação com o banco")
-                else:
+                    
                     #Preparando o comando
                     alteracao = f"""UPDATE TB_PROFESSORES SET PROFESSOR_NOME = '{nome_professor}', 
                                     PROFESSOR_CPF = {cpf_professor}, 
@@ -214,6 +216,12 @@ def alterar_registro(cursor):
                                     '{titualacao_max}'"""
                     #Executando o comando
                     cursor.execute(alteracao)
+                except ValueError:
+                    print("Digite valores numéricos")
+                except:
+                    print("Erro de transação com o banco")
+                else:
+                    conect.commit()
                 finally:
                     print("Professor alterado com sucesso!")
 
@@ -255,12 +263,7 @@ def alterar_registro(cursor):
                         bairro = address['district']
                         cidade = address['city']
                         estado = address['state']
-
-                except ValueError:
-                    print("Digite valores numéricos")
-                except:
-                    print("Erro de transação com o banco")
-                else:
+                    
                     #Preparando o comando
                     alteracao = f"""UPDATE TB_ENDERECOS SET ENDERECO_LOGRADOURO ='{logradouro}', 
                                     ENDERECO_BAIRRO = '{bairro}', 
@@ -268,6 +271,13 @@ def alterar_registro(cursor):
                                     ENDERECO_ESTADO = '{estado}, ENDERECO_CEP = '{cep}'"""
                     #Executando o comando
                     cursor.execute(alteracao)
+
+                except ValueError:
+                    print("Digite valores numéricos")
+                except:
+                    print("Erro de transação com o banco")
+                else:
+                    conect.commit()
                 finally:
                     print("Professor alterado com sucesso!")
 
@@ -278,7 +288,7 @@ def alterar_registro(cursor):
 
 # @Autor: def - Rafael Chaves - RM99643
 # @Descrição: Método que deleta os dados no banco de dados Oracle 
-def deleteRecord(script):
+def deleteRecord(script, conect):
     while True:
         try:
             # Escolha(1-4) para decidir como que quer deletar os dados
@@ -307,7 +317,7 @@ def deleteRecord(script):
                         script.execute(scriptDelete)
 
                         # Confirmar a transação
-                        script.connection.commit()
+                        conect.commit()
 
                         # Print para confirmar a exclusão
                         print(f"Registro da tabela 'TB_PROFESSORES' excluído com sucesso.")
@@ -352,7 +362,7 @@ def deleteRecord(script):
                                 script.execute(scriptDeleteEndereco)
 
                                 # Confirmar a transação
-                                script.connection.commit()
+                                conect.commit()
 
                                 print(f"Endereço excluído com sucesso.")
                             else:
@@ -399,6 +409,7 @@ def deleteRecord(script):
                             """
 
                             script.execute(scriptDeleteAll)
+                            conect.commit()
                             print(f"Todos os dados referentes ao CPF {cpf_professor} foram excluídos com sucesso.")
                         else:
                             print(f"Não foi encontrado nenhum dado referente ao cpf: {cpf_professor}")
@@ -436,7 +447,7 @@ def conecta_BD():
     else:
         conexao = True
 
-    return(conexao,inst_SQL)
+    return(conexao, inst_SQL, conect)
 
 if (__name__ == "__main__"):
     main()
